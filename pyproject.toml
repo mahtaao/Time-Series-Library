@@ -1,0 +1,22 @@
+[project]
+name = "time-series-library"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastparquet>=2024.11.0",
+    "ipykernel>=6.29.5",
+    "jupyter>=1.1.1",
+    "kagglehub>=0.3.12",
+    "layers>=0.1.5",
+    "numpy>=1.19.3",
+    "pandas>=2.3.0",
+    "patool>=1.15.0",
+    "pyarrow>=20.0.0",
+    "pygments>=2.19.1",
+    "scikit-learn>=1.6.1",
+    "sktime",
+    "torch>=2.7.1",
+    "xgboost>=2.1.4",
+]
