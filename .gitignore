@@ -167,3 +167,6 @@ scripts/augmentation/
 run_anylearn.py
 environment.txt
 kaggle.json
+$WANDB_API_KEY
+crypto/dataset/ts_test.pkl
+crypto/dataset/test.parquet
