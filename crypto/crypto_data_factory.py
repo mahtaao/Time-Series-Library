@@ -77,7 +77,7 @@ class CryptoDataset(Dataset):
         
         # Create a dummy date column for compatibility
         df_raw = df_raw.reset_index()
-        df_raw['date'] = pd.date_range(start='2020-01-01', periods=len(df_raw), freq='H')
+        df_raw['date'] = pd.date_range(start='2020-01-01', periods=len(df_raw), freq='h')
         
         # Ensure target column exists
         if self.target not in df_raw.columns:

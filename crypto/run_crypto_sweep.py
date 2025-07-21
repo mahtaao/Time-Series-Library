@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple crypto forecasting using Time-Series-Library
+Improved crypto forecasting script for W&B sweeps with proper model validation
 """
 
 import os
@@ -13,7 +13,7 @@ import argparse
 # Add current directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from crypto.crypto_exp import CryptoExp_Long_Term_Forecast
+from crypto.crypto_exp_improved import CryptoExp_Long_Term_Forecast_Improved
 from utils.print_args import print_args
 
 if __name__ == '__main__':
@@ -22,12 +22,12 @@ if __name__ == '__main__':
     torch.manual_seed(fix_seed)
     np.random.seed(fix_seed)
 
-    parser = argparse.ArgumentParser(description='Crypto Forecasting')
+    parser = argparse.ArgumentParser(description='Crypto Forecasting with Sweep Support')
 
     # basic config
     parser.add_argument('--task_name', type=str, required=True, default='long_term_forecast')
     parser.add_argument('--is_training', type=int, required=True, default=1)
-    parser.add_argument('--model_id', type=str, required=True, default='crypto_test')
+    parser.add_argument('--model_id', type=str, required=True, default='crypto_sweep')
     parser.add_argument('--model', type=str, required=True, default='iTransformer')
 
     # data loader
@@ -120,7 +120,8 @@ if __name__ == '__main__':
     print('Args in experiment:')
     print_args(args)
 
-    Exp = CryptoExp_Long_Term_Forecast
+    # Use the improved experiment class
+    Exp = CryptoExp_Long_Term_Forecast_Improved
 
     if args.is_training:
         for ii in range(args.itr):

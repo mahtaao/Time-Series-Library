@@ -1,0 +1,216 @@
+# W&B Sweep Configuration for Crypto Forecasting
+# Based on https://docs.wandb.ai/guides/sweeps/
+
+program: train.py
+method: bayes
+metric:
+  name: test_loss
+  goal: minimize
+  summary: min
+
+# Early termination for poor performing runs
+early_terminate:
+  type: hyperband
+  min_iter: 10
+
+# Sweep parameters
+parameters:
+  # Model Architecture Selection
+  model:
+    distribution: categorical
+    values: ["Transformer", "iTransformer", "FEDformer", "Mamba"]
+  
+  # Core Training Hyperparameters
+  learning_rate:
+    distribution: uniform
+    min: 0.00005
+    max: 0.0002
+  batch_size:
+    distribution: int_uniform
+    min: 16
+    max: 64
+  train_epochs:
+    distribution: int_uniform
+    min: 15   # Reduced from 20
+    max: 50   # Reduced from 100 to prevent time limit issues
+  patience:
+    distribution: int_uniform
+    min: 5
+    max: 15   # Reduced from 20
+  
+  # Model Architecture Parameters
+  d_model:
+    distribution: int_uniform
+    min: 128
+    max: 512
+  n_heads:
+    distribution: int_uniform
+    min: 4
+    max: 16
+  e_layers:
+    distribution: int_uniform
+    min: 1
+    max: 4
+  d_layers:
+    distribution: int_uniform
+    min: 1
+    max: 2
+  d_ff:
+    distribution: int_uniform
+    min: 128
+    max: 1024
+  
+  # Sequence Parameters
+  seq_len:
+    distribution: int_uniform
+    min: 48
+    max: 192
+  label_len:
+    distribution: int_uniform
+    min: 24
+    max: 96
+  pred_len:
+    distribution: int_uniform
+    min: 12
+    max: 48
+  
+  # Data Dimensions
+  enc_in:
+    distribution: int_uniform
+    min: 12
+    max: 48
+  dec_in:
+    distribution: int_uniform
+    min: 12
+    max: 48
+  c_out:
+    distribution: int_uniform
+    min: 1
+    max: 2
+  
+  # Training Parameters
+  dropout:
+    distribution: uniform
+    min: 0.05
+    max: 0.2
+  warmup_steps:
+    distribution: int_uniform
+    min: 500
+    max: 2000
+  num_workers:
+    distribution: int_uniform
+    min: 5
+    max: 20
+  
+  # Model-Specific Parameters
+  factor:
+    distribution: int_uniform
+    min: 1
+    max: 2
+  moving_avg:
+    distribution: int_uniform
+    min: 13
+    max: 50
+  
+  # Mamba-Specific Parameters (only used when model=Mamba)
+  expand:
+    distribution: int_uniform
+    min: 1
+    max: 4
+  d_conv:
+    distribution: int_uniform
+    min: 2
+    max: 8
+  
+  # Boolean Parameters
+  distil:
+    distribution: categorical
+    values: [true, false]
+  inverse:
+    distribution: categorical
+    values: [true, false]
+  use_dtw:
+    distribution: categorical
+    values: [true, false]
+  
+  # Fixed Parameters (Infrastructure & Configuration)
+  # These don't need to be swept but are required for the training script
+  task_name:
+    distribution: constant
+    value: "long_term_forecast"
+  is_training:
+    distribution: constant
+    value: 1
+  model_id:
+    distribution: constant
+    value: "crypto_sweep"
+  data:
+    distribution: constant
+    value: "custom"
+  root_path:
+    distribution: constant
+    value: "./crypto/dataset/"
+  data_path:
+    distribution: constant
+    value: "crypto.csv"
+  features:
+    distribution: constant
+    value: "M"
+  target:
+    distribution: constant
+    value: "label"
+  freq:
+    distribution: constant
+    value: "h"
+  checkpoints:
+    distribution: constant
+    value: "./checkpoints/"
+  embed:
+    distribution: constant
+    value: "timeF"
+  activation:
+    distribution: constant
+    value: "gelu"
+  loss:
+    distribution: constant
+    value: "MSE"
+  lradj:
+    distribution: constant
+    value: "type1"
+  
+  # GPU & Infrastructure (Required)
+  use_gpu:
+    distribution: constant
+    value: true
+  device:
+    distribution: constant
+    value: "cuda:0"
+  devices:
+    distribution: constant
+    value: "0"
+  use_multi_gpu:
+    distribution: constant
+    value: false
+  use_amp:
+    distribution: constant
+    value: true
+  
+  # W&B Configuration
+  use_wandb:
+    distribution: constant
+    value: true
+  wandb_project:
+    distribution: constant
+    value: "crypto-forecasting"
+  wandb_entity:
+    distribution: constant
+    value: "mahta-milaquebec"
+  
+  # Training Configuration
+  itr:
+    distribution: constant
+    value: 1
+  grad_clip:
+    distribution: int_uniform
+    min: 1
+    max: 2 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Custom experiment class for crypto forecasting that uses our custom data provider
+Improved experiment class for crypto forecasting with proper Mamba model handling
 """
 
 import os
@@ -27,19 +27,22 @@ except ImportError:
     WANDB_AVAILABLE = False
     print("Warning: wandb not available. Install with: pip install wandb")
 
-class CryptoExp_Long_Term_Forecast(Exp_Long_Term_Forecast):
+class CryptoExp_Long_Term_Forecast_Improved(Exp_Long_Term_Forecast):
     """
-    Custom experiment class for crypto forecasting that uses our custom data provider
+    Improved experiment class for crypto forecasting with proper model validation
     """
     
     def __init__(self, args):
+        # Validate model-specific parameters before building the model
+        self._validate_model_parameters(args)
+        
         super().__init__(args)
         
         # Initialize W&B if requested and available
         self.use_wandb = getattr(args, 'use_wandb', False) and WANDB_AVAILABLE
         if self.use_wandb and not wandb.run:
             wandb.init(
-                project=getattr(args, 'wandb_project', 'crypto-forecasting-v0.1'),
+                project=getattr(args, 'wandb_project', 'crypto-forecasting'),
                 entity=getattr(args, 'wandb_entity', 'mahta-milaquebec'),
                 name=getattr(args, 'wandb_run_name', None),
                 config=vars(args)
@@ -59,6 +62,41 @@ class CryptoExp_Long_Term_Forecast(Exp_Long_Term_Forecast):
             'grad_norm': [],
             'epoch_time': []
         }
+    
+    def _validate_model_parameters(self, args):
+        """Validate model-specific parameters to prevent runtime errors"""
+        
+        # Mamba model validation
+        if args.model == 'Mamba':
+            # Check if mamba_ssm is available
+            try:
+                import mamba_ssm
+            except ImportError:
+                raise ImportError("Mamba model requires mamba_ssm package. Install with: pip install mamba-ssm")
+            
+            # Validate d_ff parameter for Mamba (d_state limitation)
+            if hasattr(args, 'd_ff') and args.d_ff > 256:
+                print(f"Warning: Mamba model has d_state <= 256 limitation. Capping d_ff from {args.d_ff} to 256")
+                args.d_ff = 256
+            
+            # Validate required Mamba parameters
+            if not hasattr(args, 'expand'):
+                print("Warning: Mamba model requires 'expand' parameter. Setting default value of 2")
+                args.expand = 2
+            
+            if not hasattr(args, 'd_conv'):
+                print("Warning: Mamba model requires 'd_conv' parameter. Setting default value of 4")
+                args.d_conv = 4
+        
+        # General parameter validation
+        if hasattr(args, 'd_ff') and args.d_ff > 1024:
+            print(f"Warning: Large d_ff value ({args.d_ff}) may cause memory issues. Consider reducing.")
+        
+        if hasattr(args, 'train_epochs') and args.train_epochs > 200:
+            print(f"Warning: Large number of epochs ({args.train_epochs}) may take very long to train.")
+        
+        if hasattr(args, 'patience') and args.patience > 50:
+            print(f"Warning: Large patience value ({args.patience}) may prevent early stopping.")
     
     def _get_data(self, flag):
         """
@@ -147,14 +185,18 @@ class CryptoExp_Long_Term_Forecast(Exp_Long_Term_Forecast):
                 mae = np.mean(np.abs(pred_seq - true_seq))
                 mape = np.mean(np.abs((true_seq - pred_seq) / (true_seq + 1e-8))) * 100
                 
-                # Create time series data for visualization
-                time_steps = list(range(len(pred_seq)))
-                
-                # Single consolidated log call for predictions
+                # Log prediction metrics
                 wandb.log({
                     f"predictions/rmse/sample_{i+1}_feature_{feature_idx}_e{epoch}": mse,
                     f"predictions/mae/sample_{i+1}_feature_{feature_idx}_e{epoch}": mae,
                     f"predictions/mape/sample_{i+1}_feature_{feature_idx}_e{epoch}": mape,
+                }, step=epoch + 1)
+                
+                # Create time series data for visualization
+                time_steps = list(range(len(pred_seq)))
+                
+                # Log time series plot showing prediction vs ground truth
+                wandb.log({
                     f"predictions/time_series/sample_{i+1}_feature_{feature_idx}_e{epoch}": wandb.plot.line_series(
                         xs=time_steps,
                         ys=[pred_seq, true_seq],
@@ -187,9 +229,8 @@ class CryptoExp_Long_Term_Forecast(Exp_Long_Term_Forecast):
             val_loss_delta = 0
             overfit_ratio = 0
         
-        # Single consolidated log call with consistent step numbering
+        # Log metrics
         wandb.log({
-            # Basic metrics
             "epoch": epoch + 1,
             "loss/train": train_loss,
             "loss/val": val_loss,
@@ -202,11 +243,16 @@ class CryptoExp_Long_Term_Forecast(Exp_Long_Term_Forecast):
             "train/overfit_ratio": overfit_ratio,
             "loss/train_avg_5": np.mean(self.history['train_loss'][-5:]) if len(self.history['train_loss']) >= 5 else train_loss,
             "loss/val_avg_5": np.mean(self.history['val_loss'][-5:]) if len(self.history['val_loss']) >= 5 else val_loss,
-            
-            # Training curves using organized sections
+        })
+        
+        # Log training curves using organized sections
+        wandb.log({
+            # Training Losses
             "training/loss/train": train_loss,
             "training/loss/val": val_loss,
             "training/loss/test": test_loss,
+            
+            # Training Metrics
             "training/learning_rate": optimizer.param_groups[0]['lr'],
             "training/gradient_norm": grad_norm,
             "training/epoch_time": epoch_time,

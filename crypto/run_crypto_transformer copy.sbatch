@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=crypto_transformer
 #SBATCH --account=def-bengioy
-#SBATCH --time=0:55:00
+#SBATCH --time=11:55:00
 #SBATCH --mem=16G
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1
@@ -38,7 +38,7 @@ echo "SLURM_GPUS_ON_NODE: $SLURM_GPUS_ON_NODE"
 echo "SLURM_GPUS_PER_NODE: $SLURM_GPUS_PER_NODE"
 
 # CHANGE THESE PARAMETERS AS NEEDED
-MODEL="iTransformer"       # Model: Transformer, TimesNet, iTransformer, DLinear, etc.
+MODEL="TimesNet"       # Model: Transformer, TimesNet, iTransformer, DLinear, etc.
 # Note: For Mamba model, d_ff is capped at 256 due to selective_scan limitation
 SEQ_LEN=96                    # Input sequence length
 PRED_LEN=24                   # Prediction length

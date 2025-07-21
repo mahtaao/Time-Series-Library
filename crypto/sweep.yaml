@@ -1,0 +1,235 @@
+method: bayes
+metric:
+  goal: minimize
+  name: Relative Time (Process)
+parameters:
+  activation:
+    distribution: categorical
+    values:
+    - gelu
+  batch_size:
+    distribution: int_uniform
+    max: 64
+    min: 16
+  c_out:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  checkpoints:
+    distribution: categorical
+    values:
+    - ./checkpoints/
+  d_ff:
+    distribution: int_uniform
+    max: 2048
+    min: 512
+  d_layers:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  d_model:
+    distribution: int_uniform
+    max: 512
+    min: 128
+  data:
+    distribution: categorical
+    values:
+    - custom
+  data_path:
+    distribution: categorical
+    values:
+    - crypto.csv
+  dec_in:
+    distribution: int_uniform
+    max: 48
+    min: 12
+  des:
+    distribution: categorical
+    values:
+    - crypto_transformer_job46404092
+    - crypto_transformer_job46406518
+    - crypto_transformer_job46406550
+    - crypto_transformer_job46422062
+    - crypto_itransformer_job46430401
+    - crypto_transformer_job46430283
+    - crypto_transformer_job46429048
+    - crypto_transformer_job46430383
+    - crypto_transformer_job46432549
+  device:
+    distribution: categorical
+    values:
+    - cuda:0
+  devices:
+    distribution: categorical
+    values:
+    - "0"
+    - 1
+    - 2
+    - "3"
+  distil:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  dropout:
+    distribution: uniform
+    max: 0.2
+    min: 0.05
+  e_layers:
+    distribution: int_uniform
+    max: 4
+    min: 1
+  embed:
+    distribution: categorical
+    values:
+    - timeF
+  enc_in:
+    distribution: int_uniform
+    max: 48
+    min: 12
+  factor:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  features:
+    distribution: categorical
+    values:
+    - M
+  freq:
+    distribution: categorical
+    values:
+    - h
+  grad_clip:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  inverse:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  is_training:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  itr:
+    distribution: int_uniform
+    max: 2
+    min: 1
+  label_len:
+    distribution: int_uniform
+    max: 96
+    min: 24
+  learning_rate:
+    distribution: uniform
+    max: 0.0002
+    min: 5e-05
+  loss:
+    distribution: categorical
+    values:
+    - MSE
+  lradj:
+    distribution: categorical
+    values:
+    - type1
+  model:
+    distribution: categorical
+    values:
+    - Transformer
+    - iTransformer
+    - FEDformer
+  model_id:
+    distribution: categorical
+    values:
+    - crypto_test
+  moving_avg:
+    distribution: int_uniform
+    max: 50
+    min: 13
+  n_heads:
+    distribution: int_uniform
+    max: 16
+    min: 4
+  num_workers:
+    distribution: int_uniform
+    max: 20
+    min: 5
+  patience:
+    distribution: int_uniform
+    max: 300
+    min: 3
+  pred_len:
+    distribution: int_uniform
+    max: 48
+    min: 12
+  root_path:
+    distribution: categorical
+    values:
+    - ./crypto/dataset/
+  seq_len:
+    distribution: int_uniform
+    max: 192
+    min: 48
+  target:
+    distribution: categorical
+    values:
+    - label
+  task_name:
+    distribution: categorical
+    values:
+    - long_term_forecast
+  train_epochs:
+    distribution: int_uniform
+    max: 400
+    min: 10
+  use_amp:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  use_dtw:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  use_gpu:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  use_multi_gpu:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  use_wandb:
+    distribution: categorical
+    values:
+    - "true"
+    - "false"
+  wandb_entity:
+    distribution: categorical
+    values:
+    - mahta-milaquebec
+  wandb_project:
+    distribution: categorical
+    values:
+    - crypto-forecasting
+  wandb_run_name:
+    distribution: categorical
+    values:
+    - train_Transformer_job46404092
+    - train_Transformer_job46406518
+    - train_Transformer_job46406550
+    - train_Transformer_job46422062
+    - train_iTransformer_job46430401
+    - train_Transformer_job46430283
+    - train_Transformer_job46429048
+    - train_Transformer_job46430383
+    - train_Transformer_job46432549
+    - train_FEDformer_job46433517
+  warmup_steps:
+    distribution: int_uniform
+    max: 2000
+    min: 500
+program: train.py
