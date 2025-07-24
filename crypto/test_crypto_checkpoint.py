@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for crypto forecasting checkpoints with W&B integration
+Test script for crypto forecasting checkpoints - simplified for inference
 """
 
 import os
@@ -9,7 +9,6 @@ import torch
 import random
 import numpy as np
 import argparse
-import wandb
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
@@ -40,40 +39,6 @@ def plot_predictions(preds, trues, save_path, title="Predictions vs Ground Truth
     plt.close()
     return save_path
 
-def create_wandb_table(preds, trues, sample_indices=None):
-    """Create W&B table for detailed analysis"""
-    if sample_indices is None:
-        sample_indices = range(min(10, preds.shape[0]))
-    
-    table_data = []
-    for i in sample_indices:
-        # Calculate metrics for this sample
-        sample_pred = preds[i, :, -1]  # Last feature (target)
-        sample_true = trues[i, :, -1]
-        
-        mae = np.mean(np.abs(sample_pred - sample_true))
-        mse = np.mean((sample_pred - sample_true) ** 2)
-        rmse = np.sqrt(mse)
-        
-        # Create time series data
-        time_steps = list(range(len(sample_pred)))
-        
-        table_data.append({
-            "sample_id": i,
-            "mae": mae,
-            "mse": mse,
-            "rmse": rmse,
-            "predictions": wandb.plot.line_series(
-                xs=time_steps,
-                ys=[sample_pred, sample_true],
-                keys=["Prediction", "Ground Truth"],
-                title=f"Sample {i} Predictions",
-                xname="Time Step"
-            )
-        })
-    
-    return wandb.Table(data=table_data, columns=["sample_id", "mae", "mse", "rmse", "predictions"])
-
 def main():
     parser = argparse.ArgumentParser(description='Test Crypto Forecasting Checkpoint')
     
@@ -82,44 +47,19 @@ def main():
                        help='Path to the checkpoint directory')
     parser.add_argument('--model', type=str, default='Transformer',
                        help='Model name (should match checkpoint)')
-    
-    # W&B settings
-    parser.add_argument('--wandb_project', type=str, default='crypto-forecasting',
-                       help='W&B project name')
-    parser.add_argument('--wandb_run_name', type=str, default=None,
-                       help='W&B run name (auto-generated if not provided)')
-    parser.add_argument('--wandb_entity', type=str, default=None,
-                       help='W&B entity/username')
-    
-    # Testing parameters
     parser.add_argument('--batch_size', type=int, default=32,
                        help='Batch size for testing')
-    parser.add_argument('--save_plots', action='store_true', default=True,
+    parser.add_argument('--save_plots', action='store_true', default=False,
                        help='Save prediction plots')
-    parser.add_argument('--plot_samples', type=int, default=5,
-                       help='Number of samples to plot')
     
     args = parser.parse_args()
     
-    # Initialize W&B
-    if args.wandb_run_name is None:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        args.wandb_run_name = f"test_{args.model}_{timestamp}"
-    
-    wandb.init(
-        project=args.wandb_project,
-        name=args.wandb_run_name,
-        entity=args.wandb_entity,
-        config=vars(args)
-    )
-    
     print(f"Testing checkpoint: {args.checkpoint_path}")
-    print(f"W&B run: {wandb.run.name}")
     
-    # Create test arguments (matching training args)
+    # Create test arguments
     test_args = argparse.Namespace()
     test_args.task_name = 'long_term_forecast'
-    test_args.is_training = 0  # Testing mode
+    test_args.is_training = 0
     test_args.model_id = 'crypto_test'
     test_args.model = args.model
     test_args.data = 'custom'
@@ -129,54 +69,11 @@ def main():
     test_args.target = 'label'
     test_args.freq = 'h'
     test_args.checkpoints = './checkpoints/'
-    
-    # Model parameters (should match training)
-    test_args.seq_len = 96
-    test_args.label_len = 48
-    test_args.pred_len = 24
-    test_args.enc_in = 24
-    test_args.dec_in = 24
-    test_args.c_out = 1
-    test_args.d_model = 256
-    test_args.n_heads = 8
-    test_args.e_layers = 2
-    test_args.d_layers = 1
-    test_args.d_ff = 1024
-    test_args.moving_avg = 25
-    test_args.factor = 1
-    test_args.distil = True
-    test_args.dropout = 0.1
-    test_args.embed = 'timeF'
-    test_args.activation = 'gelu'
-    
-    # Optimization
-    test_args.num_workers = 10
-    test_args.itr = 1
-    test_args.batch_size = args.batch_size
-    test_args.learning_rate = 0.0001
-    test_args.des = 'test'
-    test_args.loss = 'MSE'
-    test_args.lradj = 'type1'
-    test_args.use_amp = False
-    test_args.inverse = True
-    test_args.use_dtw = False
-    
-    # GPU
     test_args.use_gpu = True
     test_args.gpu = 0
     test_args.use_multi_gpu = False
     test_args.devices = '0,1,2,3'
-    
-    # Check GPU availability
-    if torch.cuda.is_available():
-        test_args.device = torch.device('cuda:{}'.format(test_args.gpu))
-        print('GPU available: {}'.format(torch.cuda.get_device_name(test_args.gpu)))
-    else:
-        print('ERROR: No GPU available!')
-        sys.exit(1)
-    
-    print('Args in experiment:')
-    print_args(test_args)
+    test_args.device = torch.device('cuda:{}'.format(test_args.gpu)) if torch.cuda.is_available() else torch.device('cpu')
     
     # Create experiment
     Exp = CryptoExp_Long_Term_Forecast
@@ -201,33 +98,6 @@ def main():
     print(f'  MAPE: {mape:.6f}')
     print(f'  MSPE: {mspe:.6f}')
     
-    # Log metrics to W&B
-    wandb.log({
-        "test/mse": mse,
-        "test/mae": mae,
-        "test/rmse": rmse,
-        "test/mape": mape,
-        "test/mspe": mspe,
-        "test/pred_shape": preds.shape,
-        "test/true_shape": trues.shape
-    })
-    
-    # Create and log prediction plots
-    if args.save_plots:
-        plots_dir = f'./test_plots/{setting}/'
-        os.makedirs(plots_dir, exist_ok=True)
-        
-        plot_path = os.path.join(plots_dir, 'predictions.png')
-        plot_predictions(preds, trues, plot_path, f"{args.model} Predictions")
-        
-        # Log plot to W&B
-        wandb.log({"predictions_plot": wandb.Image(plot_path)})
-        print(f"Prediction plot saved: {plot_path}")
-    
-    # Create W&B table for detailed analysis
-    wandb_table = create_wandb_table(preds, trues)
-    wandb.log({"detailed_predictions": wandb_table})
-    
     # Save predictions and ground truth as numpy arrays
     results_dir = f'./test_results/{setting}/'
     os.makedirs(results_dir, exist_ok=True)
@@ -242,14 +112,42 @@ def main():
     })
     
     summary_df.to_csv(os.path.join(results_dir, 'metrics.csv'), index=False)
+    print(f'Metrics saved to: {os.path.join(results_dir, "metrics.csv")}')
     
-    # Log summary table to W&B
-    wandb.log({"metrics_summary": wandb.Table(dataframe=summary_df)})
+    # Save predictions in DRW competition submission format
+    print(f'\nSaving predictions in DRW competition format...')
     
-    print(f"Results saved to: {results_dir}")
-    print("Testing completed!")
+    # preds shape is (n_samples, pred_len, n_features) - we want the last feature (target)
+    test_predictions = preds[:, :, -1]  # Take the last feature (target variable)
     
-    wandb.finish()
+    print(f'Test predictions shape: {test_predictions.shape}')
+    
+    # Create submission DataFrame in DRW format
+    try:
+        sample_sub = pd.read_csv('./data/drw-crypto-market-prediction/sample_submission.csv')
+        submission = pd.DataFrame({
+            sample_sub.columns[0]: sample_sub.iloc[:len(test_predictions), 0],
+            'prediction': test_predictions.flatten()  # Flatten to 1D array
+        })
+    except FileNotFoundError:
+        # If sample submission not found, create simple format
+        submission = pd.DataFrame({
+            'id': range(len(test_predictions.flatten())),
+            'prediction': test_predictions.flatten()
+        })
+    
+    submission_file = os.path.join(results_dir, f'{args.model.lower()}_submission.csv')
+    submission.to_csv(submission_file, index=False)
+    print(f'DRW submission saved to: {submission_file}')
+    
+    # Save plots if requested
+    if args.save_plots:
+        plot_file = os.path.join(results_dir, 'predictions_plot.png')
+        plot_predictions(preds, trues, plot_file)
+        print(f'Prediction plots saved to: {plot_file}')
+    
+    print(f'\nAll results saved to: {results_dir}')
+    print(f'{args.model} testing completed successfully!')
 
 if __name__ == '__main__':
     main() 

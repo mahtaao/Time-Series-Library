@@ -53,7 +53,7 @@ D_FF=256                      # Feed-forward dimension (capped at 256 for Mamba)
 PATIENCE=50                    # Early stopping patience
 
 # W&B settings (change these to your W&B account)
-WANDB_PROJECT="crypto-forecasting"
+WANDB_PROJECT="crypto-inference"
 WANDB_ENTITY="mahta-milaquebec"  # Your W&B username
 WANDB_RUN_NAME="train_${MODEL}_job${SLURM_JOB_ID}"
 

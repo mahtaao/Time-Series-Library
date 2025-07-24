@@ -20,9 +20,11 @@ class Model(nn.Module):
         
         self.embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq, configs.dropout)
 
+        # Use a smaller state dimension for Mamba (max 256 due to selective_scan limitation)
+        d_state = min(configs.d_ff, 256)
         self.mamba = Mamba(
             d_model = configs.d_model,
-            d_state = configs.d_ff,
+            d_state = d_state,
             d_conv = configs.d_conv,
             expand = configs.expand,
         )
