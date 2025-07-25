@@ -12,7 +12,24 @@ plt.switch_backend('agg')
 def adjust_learning_rate(optimizer, epoch, args):
     # lr = args.learning_rate * (0.2 ** (epoch // 2))
     if args.lradj == 'type1':
-        lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
+        # Original: lr_adjust = {epoch: args.learning_rate * (0.5 ** ((epoch - 1) // 1))}
+        # Fixed: Less aggressive decay with minimum LR threshold
+        decay_factor = 0.5 ** ((epoch - 1) // 1)
+        lr = args.learning_rate * decay_factor
+        # Add minimum learning rate threshold to prevent vanishing gradients
+        min_lr = 1e-8  # Minimum learning rate
+        lr = max(lr, min_lr)
+        lr_adjust = {epoch: lr}
+    elif args.lradj == 'type1_fixed':
+        # New: Much more reasonable decay for long training runs
+        # Decay every 10 epochs instead of every epoch
+        decay_epochs = 10
+        decay_factor = 0.5 ** ((epoch - 1) // decay_epochs)
+        lr = args.learning_rate * decay_factor
+        # Add minimum learning rate threshold
+        min_lr = 1e-7  # Slightly higher minimum
+        lr = max(lr, min_lr)
+        lr_adjust = {epoch: lr}
     elif args.lradj == 'type2':
         lr_adjust = {
             2: 5e-5, 4: 1e-5, 6: 5e-6, 8: 1e-6,
